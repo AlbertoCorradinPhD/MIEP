@@ -1,0 +1,43 @@
+Package: MIEP
+Type: Package
+Title: Gene set-focused analysis of RNA-seq data
+Version: 0.0.1.2
+Encoding: UTF-8
+Authors@R: c(
+	     person("Alberto", "Corradin",
+                  role  = c("aut", "cre"),
+                  email = "alberto.corradin@iov.veneto.it"),
+             person("Vincenzo", "Ciminale", role = c("aut"))
+             )
+Description: Make-it-easy-pipeline (MIEP) is an integrated, interactive, and 
+	user-friendly R package that aggregates a high number of tools for 
+	the analysis of RNA-seq data. The development of MIEP's pipeline is 
+	based on the following idea: Since pathway disruption plays 
+	a critical role in cancer development by affecting the signaling 
+	mechanisms that rule cell function, focusing on gene sets mimicking 
+	pathways can accelerate the development and testing of treatments acting 
+	on key elements of signal transduction. MIEP pipeline develops and edits 
+	new gene sets based on the results of multiple integrated analyses.
+Remotes: AckerDWM/gg3D
+biocViews:
+Imports: rlist, biomaRt, httr, data.table, ggplot2, factoextra,
+        ComplexHeatmap, circlize, gridExtra, plyr, microbenchmark,
+        e1071, doParallel, parallel, pbapply, DESeq2, dendextend,
+        lubridate, NMOF, party, pheatmap, magrittr, stringr,
+        BiocManager, apeglm, ashr, vsn, caret, gplots, uwot, shiny,
+        dplyr, Biobase, viridis, splitTools, methods, Rtsne,
+        SummarizedExperiment, rlang, grid, GenomicRanges, kableExtra,
+        topGO, data.tree, rsvg, DiagrammeRsvg, RColorBrewer, XML, DBI,
+        GO.db
+Depends: R (>= 4.3), gg3D
+Suggests: knitr, rmarkdown, magick, ReportingTools, regionReport,
+        BiocStyle, ensembldb, Rgraphviz
+VignetteBuilder: knitr
+License: GPL (>= 3)
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
+NeedsCompilation: no
+Packaged: 2024-09-27 13:29:25 UTC; odysseus
+Author: Alberto Corradin [aut, cre],
+  Vincenzo Ciminale [aut]
+Maintainer: Alberto Corradin <alberto.corradin@iov.veneto.it>

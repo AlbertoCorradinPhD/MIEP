@@ -1,0 +1,21 @@
+printSettings<-function(filePath, flag_MFtest, flag_shrinkage, padj_max, FC_min, 
+                        bF_threshold, cF_threshold, flag_regionReport, flag_reportingTools){
+  data<-c("parameter", "value")
+  write(x=data, file = filePath, ncolumns = 2, append = FALSE, sep = "\t")
+  data<-c("test multifattoriale", flag_MFtest)
+  write(x=data, file = filePath, ncolumns = 2, append = TRUE, sep = "\t")
+  data<-c("shrinkage", flag_shrinkage)
+  write(x=data, file = filePath, ncolumns = 2, append = TRUE, sep = "\t")
+  data<-c("padj_max", padj_max)
+  write(x=data, file = filePath, ncolumns = 2, append = TRUE, sep = "\t")
+  data<-c("FC_min", FC_min)
+  write(x=data, file = filePath, ncolumns = 2, append = TRUE, sep = "\t")
+  data<-c("bF_threshold", bF_threshold)
+  write(x=data, file = filePath, ncolumns = 2, append = TRUE, sep = "\t")
+  data<-c("cF_threshold", cF_threshold)
+  write(x=data, file = filePath, ncolumns = 2, append = TRUE, sep = "\t")
+  data<-c("regionReport", flag_regionReport)
+  write(x=data, file = filePath, ncolumns = 2, append = TRUE, sep = "\t")
+  data<-c("reportingTools", flag_reportingTools)
+  write(x=data, file = filePath, ncolumns = 2, append = TRUE, sep = "\t")
+}

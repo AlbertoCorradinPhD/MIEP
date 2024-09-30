@@ -1,0 +1,380 @@
+---
+title: "Gene set-focused analysis of RNA-seq data with MIEP"
+author: "Alberto Corradin, and Vincenzo Ciminale"
+date: "`r format(Sys.Date(), '%m/%d/%Y')`"
+abstract: >
+  *Make-it-easy-pipeline* (MIEP) is an integrated, interactive, and user-friendly 
+  R package that aggregates a high number of tools for the analysis of RNA-seq 
+  data. The development of MIEP's pipeline is based on the following idea:  
+  Since pathway disruption plays a critical role in cancer development by affecting 
+  the signaling mechanisms that rule cell function, focusing on gene sets mimicking 
+  pathways can accelerate the development and testing of treatments acting 
+  on key elements of signal transduction. MIEP pipeline develops and edits new gene 
+  sets based on the results of multiple integrated analyses.
+output:
+  rmarkdown::html_document:
+    highlight: pygments
+    toc: true
+    fig_width: 5
+bibliography: library.bib
+vignette: >
+  %\VignetteIndexEntry{Gene set-focused analysis of RNA-seq data with MIEP pipeline}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+  %\usepackage[utf8]{inputenc}
+---
+
+```{r setup, echo=FALSE, results="hide"}
+knitr::opts_chunk$set(tidy = FALSE,
+                      cache = FALSE,
+                      dev = "png",
+                      message = FALSE, error = FALSE, warning = TRUE)
+```	
+
+
+
+**Note:** if you use MIEP in published research, please cite:
+
+> Corradin, A., Ciminale, V. (2024), 
+> MIEP: *Make-it-easy-pipeline*,
+> useR! 2024 conference, 8-12 July 2024, Salzburg, Austria
+>
+> Corradin, A., et al. (2024), 
+> *Gene set-focused analysis of RNA-seq data with MIEP pipeline*,
+> International Conference on Computational Intelligence Methods for Bioinformatics 
+> and Biostatistics (CIBB), September 4-6, 2024, Benevento, Italy
+
+
+# Quick start
+MIEP can be launched with a single command:
+
+\> *MIEP(filePath1=".../projectName/pipeline", filePath2= ".../gmtFiles")*
+
+where parameter *“ﬁlePath1”* represents the path to the folder where MIEP will 
+store the results of the pipeline for research project *“projectName”*. 
+In details, the user is expected to choose the name of the research project and 
+to create corresponding directory (*".../projectName"*) before launching MIEP 
+pipeline. 
+Parameter *“ﬁlePath2”* represents the path to the folder containing the gene sets 
+of interest for the user. Precisely, the  Gene Matrix Transposed files 
+(having extension \*.gmt) downloaded from GSEA [@Subramanian2005] 
+web site (www.gsea-msigdb.org/gsea/index.jsp) by the user or custom gene sets. 
+If this parameter is missing (namely *filePath2=NULL*), MIEP will proceed by considering 
+only the gene sets generated in consequence of the pipeline's integrated analyses. 
+Alternatively, the pipeline can be launched by running the user-friendly and 
+intuitive R command:
+
+\> *MIEP()*
+
+This assumes required paths were previously listed in a text ﬁle to be selected 
+interactively.
+
+
+```{r quickStart, eval=FALSE}
+# full start
+MIEP(filePath1=".../projectName/pipeline",filePath2=".../gmtFiles")
+# paths are passed as parameters
+# fast start
+MIEP() 
+# it follows the uploading of a text file providing required file paths
+```
+
+# How to get help for MIEP
+
+Any user can write directly to the creator of MIEP (*Make-it-easy-pipeline*)
+at *alberto.corradin@iov.veneto.it*.
+
+# Acknowledgments
+
+Dr. Donna Mia D'Agostino,
+Dr. Francesco Ciccarese,
+Dr. Vittoria Raimondi,
+Dr. Loredana Urso,
+Dr. Micol Silic-Benussi.
+
+# Funding
+
+MIEP and its developers have been partially supported by funding from AIRC IG#24935
+
+
+# Input data files
+
+The first step of MIEP's pipeline consists in performing statistical tests by 
+calling the *DESeq2* R package [@Love2014]. To this aim, raw gene counts shall be 
+provided in an input file together with the description of the samples of interest. 
+In details, the tab-separated-value file *"raw_gene_counts.tsv"* and the 
+comma-separated-value file *"coldata.csv"* shall be stored in a specific folder
+(the data folder), where they will searched by MIEP's scripts. Precisely, the user 
+is expected to create the data folder inside the pipeline folder 
+(*".../projectName/pipeline/data"*) and insert there the required files.
+
+MIEP also demands the user to specifically indicate in a text file the samples to 
+be used as controls for statistical testing (*"controls.txt"*). This way the user 
+can require to compare distinct treatments in addition to treated samples against 
+untreated ones.
+To facilitate the export and transmission of the normalized gene counts data set, 
+an *ExpressionSet* R object is going to be developed by MIEP along the pipeline. 
+Corresponding metadata, namely author, laboratory, contacts, and title 
+of the experiment, should be supplied by the user in a tab-separated-values file
+(*"infoExprSet.tsv"*) to store in the data folder.
+
+Examples of all the mentioned input files are provided in folder 
+*".../MIEP/inst/extdata"* of MIEP source package. 
+
+Without any of the above described data files, pipeline cannot fully develop its 
+potentialities. Controlled exits are planned as a consequence of exception handling: 
+friendly indications will suggest the missing file to the user. 
+
+```{r, out.width='75%', echo=FALSE, fig.align='center', fig.cap='Figure 1: Extract of an *in silico* data set in the format expected by DESeq2 for the *"raw_genes_counts.tsv"* file'}
+knitr::include_graphics('images/rawGeneCounts.png')
+```
+
+```{r, out.width='75%', echo=FALSE, fig.align='center', fig.cap='Figure 2: Corresponding *"coldata.csv"* file. This is in comma-separated-value format, i.e. values in a row are separated by comma instead of tab '}
+knitr::include_graphics('images/coldata.png')
+```
+
+# MIEP wraps already available algorithms
+
+MIEP R package aggregates a high number of tools for the analysis of RNA-seq data, 
+and facilitates their exploitation by wrapping algorithms. Most important, MIEP 
+provides an extended graphical support where results are summarized, granting 
+their immediate understanding.
+Results derived from each tool included in MIEP's pipeline are reported in tables 
+in HTML format or by pictures (heat maps, volcano plots,...). Taken together, these 
+characteristics make MIEP an easy-to-use tool for biologists having only a basic 
+knowledge of programming. The following paragraphs will detail the algorithms 
+composing the pipeline and their wrappers.
+
+# Standard workflow
+## Pre-filtering low count genes before running *DESeq2* functions
+
+*DESeq2* R package performs statistical tests, but pre-filtering low-count genes 
+before calling its functions is recommended by the authors [@Love2014]. MIEP is 
+endowed with two ﬁlters that we informally called *“pheno-ﬁlter”* and *“batch-ﬁlter”*, 
+respectively, accordingly with the intuitive approach characterizing MIEP.
+The first considers average reads’ counts in every combination of condition (e.g. treatment) 
+and cell line (or patient). Only the features that show copy numbers higher than 
+the imputed threshold in every combination will be retained. On the other side, 
+*“batch-filter”* evaluates the total amount of reads’ copy number per feature 
+in the whole batch. This approach gains interest when some transcripts are
+expected to appear only in a specific subset of samples, being barely absent 
+elsewhere. Since the above described situation represents a particular case, 
+default threshold is set to zero (no application).
+*Shiny* apps [@Chang2023] allow the user changing MIEP's default settings at run 
+time. Results of filtering process are stored in the following subfolder: 
+*".../pipeline/(results folder)/DESeq2runs*, where the directory *"(results folder)"* 
+is automatically created by MIEP's pipeline and named based on the date the 
+pipeline was run. 
+
+```{r, out.width='75%', echo=FALSE, fig.align='center', fig.cap='Figure 3: *Shiny* apps to change DESeq2 default settings'}
+knitr::include_graphics('images/settings.png')
+```
+
+## Statistical tests when data are biased
+
+The presence of biases due to cell line (or patient) specificity is verified 
+preliminary thanks to Principal Component Analysis (PCA). 
+PCA plots and other images referring to the initial analyses performed on the 
+whole data set will be stored in the following subfolder: 
+*".../DESeq2runs/wholeBatch/basicImages"*. 
+
+Let's consider a very diffused design for the sake of simplicity: multiple patients 
+(or cell lines) are subject to treatment (or to multiple treatments). Then let's 
+suppose patients' specificity overwhelms the effects of treatments (as shown 
+in Figure 4). MIEP will compare conditions (treated samples against untreated ones 
+in this example) for the subset of data referring to the same patient by Wald 
+statitical test (single-factor approach). 
+Consequently, MIEP will create one folder per patient, and corresponding
+subfolders named as follows *".../DESeq2runs/test-(patient ID)/testTables"*, 
+where the results of statistical tests are reported.
+
+
+```{r, out.width='75%', echo=FALSE, fig.align='center', fig.cap='Figure 4: Specifity of patients overwhelms the effect of treatment'}
+knitr::include_graphics('images/PCA_before.png')
+```
+
+## Data shrinkage
+
+Users can choose among multiple methods of data shrinkage to approach potential 
+outliers, included *apeglm* [@Zhu2018] and *ashr* [@Stephens2023]. By default MIEP 
+does not apply any of them but tests their effects on data. This graphical 
+comparison is shown by MA plots. Front to the graphics, the user can select the shrinkage 
+method to apply and re-run the pipeline based on his/her preference. 
+
+
+```{r, out.width='75%', echo=FALSE, fig.align='center', fig.cap='Figure 5: Comparison of shrinkage methods'}
+knitr::include_graphics('images/shrinkageMethodsComparison.png')
+```
+
+
+## Differentially expressed features
+
+Biologists are usually interested in differentially expressed transcripts. These are
+most often defined as statistically significant features showing relevant fold-change
+(FC) values when compared to controls. MIEP’s default threshold is FC>2, a cut-off
+widely reported in the literature. However, an alternative is proposed to address 
+unusual situations.
+For example, in time series logging kinetics of gene expression, the change in 
+expression levels may be subtle at initial time points and require a lower threshold for
+detection. To avoid arbitrary choices, MIEP evaluates the distribution of FC values
+(more precisely the distribution of absolute values of logarithmic FCs). The threshold
+is then set to the 95th percentile. This means that only statistically significant 
+sequences that show fold changes belonging to the top 5% of (|logFC|) values are 
+classified as differentially expressed.
+The procedure is repeated for every comparison in presence of bias.
+
+
+```{r, out.width='75%', echo=FALSE, fig.align='center', fig.cap='Figure 6: Default thresholds for the selection of differentially expressed features are shown in Volcano plot'}
+knitr::include_graphics('./images/volcanoPlotWithBoundaries.png')
+```
+
+## Annotations
+
+The released version of MIEP R package was developed to investigate coding
+genes. Therefore, subsequently to annotation of sequences [32,33] on the basis of
+Hugo Gene nomenclature (HGCN, https://www.genenames.org), the following 
+categories are automatically discarded: long intergenic non-coding RNA (lncRNA), 
+uncharacterized open reading frames, families with sequence similarity, small nucleolar
+RNA, pseudogenes, divergent transcripts, novel proteins, intronic transcripts, 
+competing endogenous lncRNA, and overlapping transcripts. microRNAs sequences can be
+saved by changing default settings (see *Shiny* app in Figure 7).
+Reads' counts, once normalized [@Anders2010] and annotated, are reported in the 
+following folder: *".../pipeline/(results folder)/normalizedCounts"* 
+
+```{r, out.width='75%', echo=FALSE, fig.align='center', fig.cap='Figure 7: microRNAs can be saved by changing default settings'}
+knitr::include_graphics('./images/microRNAs.png')
+```
+
+## Z-score transformation
+
+Genes that resulted differentially expressed in at least one of the comparisons
+among conditions (e.g. "treatment vs control"), are collected to compose distinct 
+subsets characterizing the response of each patient to treatments. These subsets 
+are then analyzed separately by the other tools included in MIEP's pipeline. 
+The data sets of differentially expressed genes are stored in subfolders named: 
+*".../(results folder)/DEs_(patient ID)/featuresSelection/"*.
+
+Z-score transformation [@Cheadle2003-wa] revealed quiet effective to reduce biases 
+due to patients (or cell line) speciﬁcities as shown by PCA [@Kassambara2020] in 
+Figure 8, where treated samples appear clearly separated from controls. 
+
+```{r, out.width='75%', echo=FALSE, fig.align='center', fig.cap='Figure 8: PCA performed on Z-score-transformed data separates samples based on treatment. This facilitates the study of the effects of treatment on patients.'}
+knitr::include_graphics('images/PCA_after.png')
+```
+
+This is confirmed by heat maps in Figures 9,10. In particular, the hierarchical 
+clustering in Figure 9 gathers data based on patient whereas Figure 10
+highlights two main clusters: treated samples result separated from controls.
+
+```{r, out.width='75%', echo=FALSE, fig.align='center', fig.cap="Figure 9: Hierarchical clustering performed on gene counts gathers data based on individual patients, confirming patients' specifities as a dominant trait. Custom palette specifically designed to highlight differences in gene expression."}
+knitr::include_graphics('./images/heatmap_before.png')
+```
+ 
+```{r, out.width='75%', echo=FALSE, fig.align='center', fig.cap='Figure 10: Hierarchical clustering performed on Z-score-transformed data highlights two main clusters in which treated samples are separated from controls. Custom palette specifically designed to highlight differences in gene expression.'}
+knitr::include_graphics('images/heatmap_after.png')
+```
+ 
+## Dimentionality reduction
+
+Interestingly, PCA  [@Kassambara2020] allows ranking genes based on the weights 
+(*importance*) they participate to the composition of principal components with. 
+Figure 11 shows genes having the highest *importance* values for first principal 
+component. MIEP allows highlighting in the picture the features that belong to a 
+particular gene set of interest. This last can be indicated by the user at run 
+time by means of specific *Shiny* app [@Chang2023]. Additional indications about 
+reads' counts can suggest biologists preferable targets for wet lab experiments.
+
+Dimensionality reduction is carried out also by means of UMAP [@Melville2023]; 
+both 2D and 3D representations are supplied [@Acker]. Data are visualized also by 
+exploiting tSNE [@Krijthe2015]. SVM [@Meyer2023] is applied on mapped data derived 
+from tSNE application. All the results and graphical representations are stored 
+in a folder named *".../DEs_(patient ID)/dimensionalityReduction"*
+
+
+```{r, out.width='75%', echo=FALSE, fig.align='center', fig.cap="Figure 11: Genes' *importance*, i.e. their weights when composing first principal component."}
+knitr::include_graphics('images/PC1_50topContributors.png')
+```
+
+## Enrichment of Gene Ontology terms
+
+The enrichment of Gene Ontology (GO) terms can be verified thanks to *topGO* 
+R package [@Alexa2023]. The algorithm allows testing GO terms enrichment on the 
+basis of a subset of genes entitled as *"significant"* to distinguish them from 
+remaining features composing the *"gene universe"*. Differentially expressed genes 
+are an obvious choice as *"significant"* subset. 
+
+However, an alternative subset of *"significant"* genes can derive from the 
+ranking of *importance* in composing principal components, e.g. by selecting the 
+top 5% subset based on the weights established by PCA. In fact, when samples are 
+separated based on the treatment, the genes composing principal components with the 
+highest weights are likely involved in the functional mechanisms of interest. 
+
+Results of GO terms enrichment's tests are reported in details in subfolders 
+named: *".../DEs_(cell line)/GOenrichment"*.
+Once identified the most enriched GO terms, corresponding sets of differentially 
+expressed genes will be automatically edited. These Gene Matrix Transposed files 
+files created by MIEP's pipeline are automatically copied in folder 
+*".../pipeline/(results folder)/gmtFiles"* .
+
+
+```{r, out.width='75%', echo=FALSE, fig.align='center', fig.cap='Figure 12: *Shiny* app to select the subset of genes to consider as *significant* with respect to the *gene universe*. User can choose among differentially expressed features, or on the basis of PCA results, or submit custom lists to the algorithm that will calculate the enrichment of gene ontology terms.'}
+knitr::include_graphics('images/geneOntology.png')
+```
+
+```{r, out.width='75%', echo=FALSE, fig.align='center', fig.cap='Figure 13: An example of ranking of GO terms.'}
+knitr::include_graphics('images/rankingOfGOterms.png')
+```
+
+## Conditional random forests
+
+Conditional random forests [@Hothorn2006;@Zeileis2008;@HothornT2006] are 
+used to classify samples depending on condition (e.g. different treatments or 
+distinct time points). To this aim, the union of differentially expressed genes 
+coming from all the available patients is considered.
+*Variables importance* of features is then calculated [@Strobl2007;@Strobl2008]. 
+Genes characterized by the highest *importance* values are used to edit new gene 
+sets, likely related conditions. Results are stored in folder:
+*".../(results folder)/DEs_union/conditionalRandomForests/"* .
+
+The settings of random forests' parameters are optimized by means of a grid search 
+approach [@Gilli2019;@Schumann2023], whose computational burden is eased by 
+parallel computing. Distinct implementations of parallel computing [@Weston2022;@Solymos2023] 
+are automatically tested before grid search, to select the fastest algorithm. 
+Since expanded swap memory is often used as surrogate when RAM is limited, 
+swappiness in Linux OS can be increased for machine learning. A Shiny app allows 
+inserting superuser password to invoke system commands if desired.
+
+
+```{r, out.width='75%', echo=FALSE, fig.align='center', fig.cap='Figure 14: *Shiny* app to select what classes to classify for.'}
+knitr::include_graphics('images/shinyForRandomForests.png')
+```
+
+```{r, out.width='75%', echo=FALSE, fig.align='center', fig.cap="Figure 15: Features' importance represents their usefulness to separated treated samples from controls (classification by condition)."}
+knitr::include_graphics('images/varImportance.png')
+```
+
+## Focusing on single gene sets
+
+In conclusion, MIEP R package helps developing testable hypotheses and selecting 
+targets for wet lab functional testing by editing new gene sets based on the 
+results of the above described analyses. Figure 16 shows the heat map of top 
+features (expression values), as selected based on random forests' classification. 
+Corresponding fold-change values are graphically reported in Figure 17. 
+
+Analogous images are automatically produced by MIEP for gene sets derived from 
+the enrichment of GO terms. These final pictures, generated for every gene set of 
+interest, can provide indications of immediate understanding for biologists planning 
+subsequent wet lab tests. Results are stored in subfolders: 
+*".../(results folder)/genelistsOverview/(gene set name)"* .
+
+
+```{r, out.width='75%', echo=FALSE, fig.align='center', fig.cap='Figure 16: Heat map of the features showing the highest *variables importance* in classification.'}
+knitr::include_graphics('images/heatmapDEonly_customColors.png')
+```
+
+```{r, out.width='75%', echo=FALSE, fig.align='center', fig.cap='Figure 17: Fold changes of genes in Figure 16 are reported graphically.'}
+knitr::include_graphics('images/heatmapFC_customColors.png')
+```
+
+
+
